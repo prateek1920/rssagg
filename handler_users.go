@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	database "/Users/prateekgupta/rssagg/internal/database/db.go"
+	database "github.com/prateek1920/rssagg/internal/database"
 
 	"github.com/google/uuid"
 )
@@ -22,7 +22,7 @@ func (apiCfg *apiConfig) handlerUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := apiCfg.DB.CreateUser(r.Context(), database.User{
+	user, err := apiCfg.DB.CreateUser(r.Context(), database.CreateUserParams{
 		ID:        uuid.New(),
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
@@ -34,5 +34,22 @@ func (apiCfg *apiConfig) handlerUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseWithJSON(w, 200, user)
+	responseWithJSON(w, 200, DatabaseUserToUser(user))
+}
+
+func (apiCfg *apiConfig) handlerGetUser(w http.ResponseWriter, r *http.Request, user database.User) {
+	responseWithJSON(w, 200, DatabaseUserToUser(user))
+}
+
+func (apiCfg *apiConfig) handlerGetPostsForUser(w http.ResponseWriter, r *http.Request, user database.User) {
+	posts, err := apiCfg.DB.GetPostsForUser(r.Context(), database.GetPostsForUserParams{
+		UserID: user.ID,
+		Limit:  10,
+	})
+
+	if err != nil {
+		responseWithError(w, 500, fmt.Sprintf("Error occurred in fetching post: %v", err))
+		return
+	}
+	responseWithJSON(w, 200, DatabasePostsToPosts(posts))
 }
